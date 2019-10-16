@@ -3,8 +3,11 @@ from __future__ import unicode_literals
 import threading
 import time
 import logging
+import os
 
 from mopidy import core
+from . import Extension
+from .brainz import Brainz
 
 import pykka
 
@@ -30,18 +33,12 @@ class PiDiFrontend(pykka.ThreadingActor, core.CoreListener):
     def __init__(self, config, core):
         super(PiDiFrontend, self).__init__()
         self.core = core
-        self.config = config["pidi"]
-        self.display_config = PiDiConfig(config)
+        self.config = config
+        self.current_track = None
 
     def on_start(self):
-        self.display = PiDi(DisplayST7789(self.display_config))
+        self.display = PiDi(self.config)
         self.display.start()
-        self.display.update(
-            shuffle=self.core.tracklist.get_random(),
-            repeat=self.core.tracklist.get_repeat(),
-            volume=self.core.playback.volume.get(),
-            album_art="/home/pi/.cache/bum/current.jpg"
-        )
 
     def on_stop(self):
         self.display.stop()
@@ -66,46 +63,57 @@ class PiDiFrontend(pykka.ThreadingActor, core.CoreListener):
         pass
 
     def seeked(self, time_position):
-        self.update_track(None, time_position)
+        self.update_elapsed(time_position)
 
     def stream_title_changed(self, title):
         pass
 
     def track_playback_ended(self, tl_track, time_position):
-        self.update_track(tl_track.track, time_position)
+        self.update_elapsed(time_position)
         self.display.update(state='pause')
 
     def track_playback_paused(self, tl_track, time_position):
-        self.update_track(tl_track.track, time_position)
+        self.update_elapsed(time_position)
         self.display.update(state='pause')
 
     def track_playback_resumed(self, tl_track, time_position):
-        self.update_track(tl_track.track, time_position)
+        self.update_elapsed(time_position)
         self.display.update(state='play')
 
     def track_playback_started(self, tl_track):
         self.update_track(tl_track.track, 0)
         self.display.update(state='play')
+
+    def update_elapsed(self, time_position):
+         self.display.update(
+            elapsed=float(time_position),
+        )
     
     def update_track(self, track, time_position=None):
         if track is None:
             track = self.core.playback.get_current_track().get()
 
+        title = ''
+        album = ''
+        artist = ''
+
         if track.name is not None:
-            self.display.update(title=track.name)
+            title = track.name
 
         if track.album is not None and track.album.name is not None:
-            self.display.update(album=track.album.name)
+            album = track.album.name
 
         if track.artists is not None:
-            self.display.update(
-                artist=", ".join(
-                    [artist.name for artist in track.artists])
-            )
+            artist = ", ".join([artist.name for artist in track.artists])
+
+        self.display.update(
+            title=title,
+            album=album,
+            artist=artist
+        )
 
         if time_position is not None:
             self.display.update(
-                progress=float(time_position) / float(track.length),
                 elapsed=float(time_position),
                 length=float(track.length)
             )
@@ -120,10 +128,16 @@ class PiDiFrontend(pykka.ThreadingActor, core.CoreListener):
 
 
 class PiDi():
-    def __init__(self, display_plugin, fps=30):
-        self._display = display_plugin
+    def __init__(self, config):
+        self.config = config
+        self.cache_dir = Extension.get_data_dir(config)
+        self.display_config = PiDiConfig(config["pidi"])
+        self.display_class = Extension.get_display_types()[self.config["pidi"]["display"]]
+
+        self._brainz = Brainz(cache_dir=self.cache_dir)
+        self._display = self.display_class(self.display_config)
         self._running = threading.Event()
-        self._delay = 1.0 / fps
+        self._delay = 1.0 / 30
         self._thread = None
 
         self.shuffle = False
@@ -138,6 +152,7 @@ class PiDi():
         self.artist = ""
         self._last_progress_update = time.time()
         self._last_progress_value = 0
+        self._last_art = ""
 
     def start(self):
         if self._thread is not None:
@@ -158,17 +173,24 @@ class PiDi():
         self.repeat = kwargs.get('repeat', self.repeat)
         self.state = kwargs.get('state', self.state)
         self.volume = kwargs.get('volume', self.volume)
-        self.progress = kwargs.get('progress', self.progress)
+        # self.progress = kwargs.get('progress', self.progress)
         self.elapsed = kwargs.get('elapsed', self.elapsed)
         self.length = kwargs.get('length', self.length)
         self.title = kwargs.get('title', self.title)
         self.album = kwargs.get('album', self.album)
         self.artist = kwargs.get('artist', self.artist)
 
-        if 'album_art' in kwargs:
-            self._display.update_album_art(kwargs['album_art'])
+        if 'album' in kwargs or 'artist' in kwargs or 'title' in kwargs:
+            _album = self.title if self.album is None or self.album == '' else self.album
+            art = self._brainz.get_album_art(self.artist, _album)
+            if art != self._last_art:
+                print("Updating art to {}".format(art))
+                self._display.update_album_art(art)
+                self._last_art = art
 
         if 'elapsed' in kwargs:
+            if 'length' in kwargs:
+                self.progress = float(self.elapsed) / float(self.length),
             self._last_elapsed_update = time.time()
             self._last_elapsed_value = kwargs['elapsed']
 
@@ -190,5 +212,4 @@ class PiDi():
                 self.artist)
 
             self._display.redraw()
-
 
