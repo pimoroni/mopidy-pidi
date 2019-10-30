@@ -190,7 +190,7 @@ class PiDi():
 
         if 'elapsed' in kwargs:
             if 'length' in kwargs:
-                self.progress = float(self.elapsed) / float(self.length),
+                self.progress = float(self.elapsed) / float(self.length)
             self._last_elapsed_update = time.time()
             self._last_elapsed_value = kwargs['elapsed']
 
