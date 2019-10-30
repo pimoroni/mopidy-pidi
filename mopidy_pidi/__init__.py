@@ -26,7 +26,7 @@ class Extension(ext.Extension):
                 plugin = entry_point.load()
                 display_types[plugin.option_name] = plugin
             except (ImportError) as err:
-                logger.log("Error loading display plugin {entry_point}: {err}".format(
+                logger.log(logging.WARN, "Error loading display plugin {entry_point}: {err}".format(
                     entry_point=entry_point,
                     err=err))
 
