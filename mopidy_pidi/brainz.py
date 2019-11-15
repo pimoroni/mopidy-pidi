@@ -69,7 +69,7 @@ class Brainz:
             if retries == 0:
                 # raise mus.NetworkError("Failure connecting to MusicBrainz.org")
                 return None
-            print("warning: Retrying download. {retries} retries left!".format(retires=retries))
+            print("warning: Retrying download. {retries} retries left!".format(retries=retries))
             time.sleep(retry_delay)
             self.request_album_art(song, artist, album, size=size, retries=retries - 1)
 
