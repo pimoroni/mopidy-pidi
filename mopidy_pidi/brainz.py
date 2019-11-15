@@ -40,11 +40,11 @@ class Brainz:
         if os.path.exists(file_name):
             # If a cached file already exists, use it!
             if callback is not None:
-                return callback(self._default_filename)
+                return callback(file_name)
             return file_name
 
         if callback is not None:
-            def async_request_album_art(self, callback):
+            def async_request_album_art(self, artist, album, file_name, callback):
                 album_art = self.request_album_art(artist, album)
 
                 if album_art is None:
@@ -57,7 +57,14 @@ class Brainz:
 
                 return callback(file_name)
 
-            t_album_art = Thread(target=async_request_album_art, args=(self, callback))
+            t_album_art = Thread(
+                target=async_request_album_art,
+                args=(
+                    self,
+                    artist,
+                    album,
+                    file_name,
+                    callback))
             t_album_art.start()
             return t_album_art
 
