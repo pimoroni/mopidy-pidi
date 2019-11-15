@@ -4,6 +4,7 @@ Musicbrainz related functions.
 import time
 import musicbrainzngs as mus
 import os
+from threading import Thread
 import base64
     
 from .__init__ import __version__
@@ -21,8 +22,10 @@ class Brainz:
 
         self.save_album_art(self.get_default_album_art(), self._default_filename)
 
-    def get_album_art(self,  artist, album):
+    def get_album_art(self,  artist, album, callback=None):
         if artist is None or album is None or artist == "" or album == "":
+            if callback is not None:
+                return callback(self._default_filename)
             return self._default_filename
 
         file_name = "{artist}_{album}".format(
@@ -36,19 +39,40 @@ class Brainz:
 
         if os.path.exists(file_name):
             # If a cached file already exists, use it!
+            if callback is not None:
+                return callback(self._default_filename)
             return file_name
 
-        album_art = self.request_album_art(artist, album)
+        if callback is not None:
+            def async_request_album_art(self, callback):
+                album_art = self.request_album_art(artist, album)
 
-        if album_art is None:
-            # If the MusicBrainz request fails, cache the default
-            # art using this filename.
-            self.save_album_art(self.get_default_album_art(), file_name)
+                if album_art is None:
+                    # If the MusicBrainz request fails, cache the default
+                    # art using this filename.
+                    self.save_album_art(self.get_default_album_art(), file_name)
+                    return callback(file_name)
+
+                self.save_album_art(album_art, file_name)
+
+                return callback(file_name)
+
+            t_album_art = Thread(target=async_request_album_art, args=(self, callback))
+            t_album_art.start()
+            return t_album_art
+
+        else:
+            album_art = self.request_album_art(artist, album)
+
+            if album_art is None:
+                # If the MusicBrainz request fails, cache the default
+                # art using this filename.
+                self.save_album_art(self.get_default_album_art(), file_name)
+                return file_name
+
+            self.save_album_art(album_art, file_name)
+
             return file_name
-
-        self.save_album_art(album_art, file_name)
-
-        return file_name
 
     def save_album_art(self, data, output_file):
         with open(output_file, "wb") as f:
