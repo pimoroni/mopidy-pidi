@@ -122,8 +122,11 @@ class PiDiFrontend(pykka.ThreadingActor, core.CoreListener):
         pass
 
     def volume_changed(self, volume):
+        if volume is None:
+            return
+
         self.display.update(
-            volume=self.core.playback.volume.get()
+            volume=volume
         )
 
 
