@@ -168,6 +168,12 @@ class PiDi():
         self._thread.join()
         self._thread = None
 
+    def _handle_album_art(self, art):
+        if art != self._last_art:
+            print("Updating art to {}".format(art))
+            self._display.update_album_art(art)
+            self._last_art = art
+
     def update(self, **kwargs):
         self.shuffle = kwargs.get('shuffle', self.shuffle)
         self.repeat = kwargs.get('repeat', self.repeat)
@@ -182,11 +188,12 @@ class PiDi():
 
         if 'album' in kwargs or 'artist' in kwargs or 'title' in kwargs:
             _album = self.title if self.album is None or self.album == '' else self.album
-            art = self._brainz.get_album_art(self.artist, _album)
-            if art != self._last_art:
-                print("Updating art to {}".format(art))
-                self._display.update_album_art(art)
-                self._last_art = art
+            art = self._brainz.get_album_art(self.artist, _album, self._handle_album_art)
+            # art = self._brainz.get_album_art(self.artist, _album)
+            # if art != self._last_art:
+            #    print("Updating art to {}".format(art))
+            #    self._display.update_album_art(art)
+            #    self._last_art = art
 
         if 'elapsed' in kwargs:
             if 'length' in kwargs:
