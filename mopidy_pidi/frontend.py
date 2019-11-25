@@ -195,7 +195,7 @@ class PiDi():
             self._last_elapsed_value = kwargs['elapsed']
 
     def _loop(self):
-        while self._running.wait(self._delay):
+        while self._running.is_set():
             if self.state == 'play':
                 t_elapsed_ms = (time.time() - self._last_elapsed_update) * 1000
                 self.elapsed = float(self._last_elapsed_value + t_elapsed_ms)
@@ -212,4 +212,5 @@ class PiDi():
                 self.artist)
 
             self._display.redraw()
+            time.sleep(self._delay)
 
