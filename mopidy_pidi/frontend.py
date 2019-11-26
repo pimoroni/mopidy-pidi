@@ -189,26 +189,27 @@ class PiDi():
     def update_album_art(self, art=None):
         _album = self.title if self.album is None or self.album == '' else self.album
 
-        if os.path.isfile(art):
-            # Art is already a locally cached file we can use
-            self._handle_album_art(art)
-            return
-
-        elif art.startswith("http://") or art.startswith("https://"):
-            file_name = self._brainz.get_cache_file_name(art)
-
-            if os.path.isfile(file_name):
-                # If a cached file already exists, use it!
-                self._handle_album_art(file_name)
+        if art is not None:
+            if os.path.isfile(art):
+                # Art is already a locally cached file we can use
+                self._handle_album_art(art)
                 return
 
-            else:
-                # Otherwise, request the URL and save it!
-                response = requests.get(art)
-                if response.status_code == 200:
-                    self._brainz.save_album_art(response.content, file_name)
+            elif art.startswith("http://") or art.startswith("https://"):
+                file_name = self._brainz.get_cache_file_name(art)
+
+                if os.path.isfile(file_name):
+                    # If a cached file already exists, use it!
                     self._handle_album_art(file_name)
                     return
+
+                else:
+                    # Otherwise, request the URL and save it!
+                    response = requests.get(art)
+                    if response.status_code == 200:
+                        self._brainz.save_album_art(response.content, file_name)
+                        self._handle_album_art(file_name)
+                        return
 
         art = self._brainz.get_album_art(self.artist, _album, self._handle_album_art)
 
