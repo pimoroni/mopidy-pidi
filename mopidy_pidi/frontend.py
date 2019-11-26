@@ -122,9 +122,12 @@ class PiDiFrontend(pykka.ThreadingActor, core.CoreListener):
         track_images = self.core.library.get_images([track.uri]).get()
         if track.uri in track_images:
             track_images = track_images[track.uri]
-            for image in track_images:
-                if image.height == 300 and image.width == 300:
-                    art = image.uri
+            if len(track_images) == 1:
+                art = track_images[0].uri
+            else:
+                for image in track_images:
+                    if image.height >= 240 and image.width >= 240:
+                        art = image.uri
 
         self.display.update_album_art(art=art)
 
