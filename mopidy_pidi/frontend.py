@@ -8,7 +8,7 @@ import time
 import requests
 
 import pykka
-from IO import BytesIO
+from io import BytesIO
 from mopidy import core
 
 from . import Extension
@@ -119,10 +119,10 @@ class PiDiFrontend(pykka.ThreadingActor, core.CoreListener):
             )
 
         art = None
-        track_images = core.library.get_images([track.uri]).get()
-        if len(track_images) > 0:
+        track_images = self.core.library.get_images([track.uri]).get()
+        if track.uri in track_images:
+            track_images = track_images[track.uri]
             for image in track_images:
-                print(image)
                 if image.height == 300 and image.width == 300:
                     art = image.uri
 
@@ -183,7 +183,6 @@ class PiDi():
 
     def _handle_album_art(self, art):
         if art != self._last_art:
-            print("Updating art to {}".format(art))
             self._display.update_album_art(art)
             self._last_art = art
 
@@ -193,6 +192,7 @@ class PiDi():
         if os.path.isfile(art):
             # Art is already a locally cached file we can use
             self._handle_album_art(art)
+            return
 
         elif art.startswith("http://") or art.startswith("https://"):
             file_name = self._brainz.get_cache_file_name(art)
@@ -200,12 +200,15 @@ class PiDi():
             if os.path.isfile(file_name):
                 # If a cached file already exists, use it!
                 self._handle_album_art(file_name)
+                return
+
             else:
                 # Otherwise, request the URL and save it!
                 response = requests.get(art)
                 if response.status_code == 200:
-                    self._brainz.save_album_art(BytesIO(response.content), file_name)
+                    self._brainz.save_album_art(response.content, file_name)
                     self._handle_album_art(file_name)
+                    return
 
         art = self._brainz.get_album_art(self.artist, _album, self._handle_album_art)
 

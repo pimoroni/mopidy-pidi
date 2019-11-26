@@ -89,7 +89,7 @@ class Brainz:
                                        release=album,
                                        limit=1)
             release_id = data["release-list"][0]["release-group"]["id"]
-            print("album: Using release-id: {}".format(data['release-list'][0]['id']))
+            print("mopidy-pidi: musicbrainz sing release-id: {}".format(data['release-list'][0]['id']))
 
             return mus.get_release_group_image_front(release_id, size=size)
 
@@ -97,12 +97,12 @@ class Brainz:
             if retries == 0:
                 # raise mus.NetworkError("Failure connecting to MusicBrainz.org")
                 return None
-            print("warning: Retrying download. {retries} retries left!".format(retries=retries))
+            print("mopidy-pidi: musicbrainz retrying download. {retries} retries left!".format(retries=retries))
             time.sleep(retry_delay)
             self.request_album_art(song, artist, album, size=size, retries=retries - 1)
 
         except mus.ResponseError:
-            print("error: Couldn't find album art for",
+            print("mopidy-pidi: musicbrainz couldn't find album art for",
                   "{artist} - {album}".format(artist=artist, album=album))
             return None
 
