@@ -6,6 +6,7 @@ import logging
 import os
 
 from mopidy import core
+from subprocess import check_output, CalledProcessError
 from . import Extension
 from .brainz import Brainz
 
@@ -42,6 +43,21 @@ class PiDiFrontend(pykka.ThreadingActor, core.CoreListener):
         self.display.update(
             volume=self.core.mixer.get_volume().get()
         )
+
+        if 'http' in self.config:
+            http = self.config['http']
+            if http.get('enabled', False):
+                hostname = http.get('hostname', '127.0.0.1')
+                port = http.get('port', 6680)
+                if hostname == "0.0.0.0":
+                    try:
+                        hostname = check_output(["hostname", "-I"])
+                        hostname = hostname.split(" ")[0]
+                    except CalledProcessError:
+                        pass
+                self.display.update(
+                    title="Visit http://{hostname}:{port} to select content.".format(hostname=hostname, port=port)
+                )
 
     def on_stop(self):
         self.display.stop()
