@@ -1,12 +1,13 @@
 """
 Musicbrainz related functions.
 """
-import time
-import musicbrainzngs as mus
-import os
-from threading import Thread
 import base64
-    
+import os
+import time
+from threading import Thread
+
+import musicbrainzngs as mus
+
 from .__init__ import __version__
 
 
@@ -28,16 +29,12 @@ class Brainz:
                 return callback(self._default_filename)
             return self._default_filename
 
-        file_name = "{artist}_{album}".format(
+        file_name = self.get_cache_file_name("{artist}_{album}".format(
             artist=artist,
             album=album
-        )
+        ))
 
-        file_name = "{}.jpg".format(base64.b64encode(file_name))
-
-        file_name = os.path.join(self._cache_dir, file_name)
-
-        if os.path.exists(file_name):
+        if os.path.isfile(file_name):
             # If a cached file already exists, use it!
             if callback is not None:
                 return callback(file_name)
@@ -108,6 +105,11 @@ class Brainz:
             print("error: Couldn't find album art for",
                   "{artist} - {album}".format(artist=artist, album=album))
             return None
+
+    def get_cache_file_name(self, file_name):
+        file_name = "{}.jpg".format(base64.b64encode(file_name))
+
+        return os.path.join(self._cache_dir, file_name)
 
     def get_default_album_art(self):
         """Return binary version of default album art."""
