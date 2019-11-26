@@ -39,6 +39,9 @@ class PiDiFrontend(pykka.ThreadingActor, core.CoreListener):
     def on_start(self):
         self.display = PiDi(self.config)
         self.display.start()
+        self.display.update(
+            volume=self.core.mixer.get_volume().get()
+        )
 
     def on_stop(self):
         self.display.stop()
