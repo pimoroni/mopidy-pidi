@@ -89,7 +89,7 @@ class Brainz:
                                        release=album,
                                        limit=1)
             release_id = data["release-list"][0]["release-group"]["id"]
-            print("mopidy-pidi: musicbrainz sing release-id: {}".format(data['release-list'][0]['id']))
+            print("mopidy-pidi: musicbrainz using release-id: {}".format(data['release-list'][0]['id']))
 
             return mus.get_release_group_image_front(release_id, size=size)
 
@@ -102,8 +102,7 @@ class Brainz:
             self.request_album_art(song, artist, album, size=size, retries=retries - 1)
 
         except mus.ResponseError:
-            print("mopidy-pidi: musicbrainz couldn't find album art for",
-                  "{artist} - {album}".format(artist=artist, album=album))
+            print("mopidy-pidi: musicbrainz couldn't find album art for {artist} - {album}".format(artist=artist, album=album))
             return None
 
     def get_cache_file_name(self, file_name):
