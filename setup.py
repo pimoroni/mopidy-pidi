@@ -28,7 +28,8 @@ setup(
         "setuptools",
         "Mopidy >= 2.2",
         "Pykka >= 2.0",
-        "musicbrainzngs >= 0.6"
+        "musicbrainzngs >= 0.6",
+        "netifaces"
     ],
     entry_points={
         "mopidy.ext": [

@@ -1,19 +1,17 @@
 from __future__ import unicode_literals
 
-import threading
-import time
 import logging
 import os
+import threading
+import time
 
-from mopidy import core
-from subprocess import check_output, CalledProcessError
-from . import Extension
-from .brainz import Brainz
-
+import netifaces
 import pykka
-
+from mopidy import core
 from pidi_display_st7789 import DisplayST7789
 
+from . import Extension
+from .brainz import Brainz
 
 logger = logging.getLogger(__name__)
 
@@ -45,23 +43,33 @@ class PiDiFrontend(pykka.ThreadingActor, core.CoreListener):
         )
 
         if 'http' in self.config:
+            ifaces = netifaces.interfaces()
+            ifaces.remove(u'lo')
+
             http = self.config['http']
             if http.get('enabled', False):
                 hostname = http.get('hostname', '127.0.0.1')
                 port = http.get('port', 6680)
-                if hostname == "0.0.0.0":
-                    try:
-                        hostname = check_output(["hostname", "-I"])
-                        hostname = hostname.split(" ")[0]
-                    except CalledProcessError:
-                        pass
-                self.display.update(
-                    title="Visit http://{hostname}:{port} to select content.".format(hostname=hostname, port=port)
-                )
+                if hostname in ["::", "0.0.0.0"]:
+                    family = netifaces.AF_INET6 if hostname == "::" else netifaces.AF_INET
+                    for iface in ifaces:
+                        hostname = self.get_ifaddress(iface, family)
+                        if hostname is not None:
+                            break
+                if hostname is not None:
+                    self.display.update(
+                        title="Visit http://{hostname}:{port} to select content.".format(hostname=hostname, port=port)
+                    )
 
     def on_stop(self):
         self.display.stop()
         self.display = None
+
+    def get_ifaddress(self, iface, family):
+        try:
+            return netifaces.ifaddresses(iface)[family][0]['addr']
+        except (IndexError, KeyError):
+            return None
 
     def mute_changed(self, mute):
         pass
@@ -237,4 +245,3 @@ class PiDi():
 
             self._display.redraw()
             time.sleep(self._delay)
-
