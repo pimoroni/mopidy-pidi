@@ -58,6 +58,7 @@ class PiDiFrontend(pykka.ThreadingActor, core.CoreListener):
                     self.display.update(
                         title="Visit http://{hostname}:{port} to select content.".format(hostname=hostname, port=port)
                     )
+                    self.display.update_album_art(art='')
 
     def on_stop(self):
         self.display.stop()
