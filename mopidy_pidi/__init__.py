@@ -2,10 +2,10 @@ from __future__ import unicode_literals
 
 import logging
 import os
+
 from pkg_resources import iter_entry_points
 
 from mopidy import config, ext
-
 
 __version__ = "0.1.0"
 

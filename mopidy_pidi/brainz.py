@@ -1,12 +1,13 @@
 """
 Musicbrainz related functions.
 """
-import time
-import musicbrainzngs as mus
-import os
-from threading import Thread
 import base64
-    
+import os
+import time
+from threading import Thread
+
+import musicbrainzngs as mus
+
 from .__init__ import __version__
 
 
@@ -28,16 +29,12 @@ class Brainz:
                 return callback(self._default_filename)
             return self._default_filename
 
-        file_name = "{artist}_{album}".format(
+        file_name = self.get_cache_file_name("{artist}_{album}".format(
             artist=artist,
             album=album
-        )
+        ))
 
-        file_name = "{}.jpg".format(base64.b64encode(file_name))
-
-        file_name = os.path.join(self._cache_dir, file_name)
-
-        if os.path.exists(file_name):
+        if os.path.isfile(file_name):
             # If a cached file already exists, use it!
             if callback is not None:
                 return callback(file_name)
@@ -92,7 +89,7 @@ class Brainz:
                                        release=album,
                                        limit=1)
             release_id = data["release-list"][0]["release-group"]["id"]
-            print("album: Using release-id: {}".format(data['release-list'][0]['id']))
+            print("mopidy-pidi: musicbrainz using release-id: {}".format(data['release-list'][0]['id']))
 
             return mus.get_release_group_image_front(release_id, size=size)
 
@@ -100,28 +97,31 @@ class Brainz:
             if retries == 0:
                 # raise mus.NetworkError("Failure connecting to MusicBrainz.org")
                 return None
-            print("warning: Retrying download. {retries} retries left!".format(retries=retries))
+            print("mopidy-pidi: musicbrainz retrying download. {retries} retries left!".format(retries=retries))
             time.sleep(retry_delay)
             self.request_album_art(song, artist, album, size=size, retries=retries - 1)
 
         except mus.ResponseError:
-            print("error: Couldn't find album art for",
-                  "{artist} - {album}".format(artist=artist, album=album))
+            print("mopidy-pidi: musicbrainz couldn't find album art for {artist} - {album}".format(artist=artist, album=album))
             return None
+
+    def get_cache_file_name(self, file_name):
+        file_name = "{}.jpg".format(base64.b64encode(file_name))
+
+        return os.path.join(self._cache_dir, file_name)
 
     def get_default_album_art(self):
         """Return binary version of default album art."""
         return base64.b64decode("""
-iVBORw0KGgoAAAANSUhEUgAAAOYAAADmAQMAAAD7pGv4AAAABlBMVEX///8AAABVwtN+AAAChUlE
-QVRYw6XZsW0jMRCFYRoXTMYKWIRClsXQ4WXX1lVwNbAQB5YXgiBpZ77gRNiAtZS5/HfJmTePrb3R
-Luyb6F1toHe3Xnd+/G1R9/76/fNTtTj+vWr9uHXVxjHtqs3bb4XbALxv965wWw18sJbAcR+gwq2B
-x33iFW4NvB5GyHFL4NtsA7glcDwNkeNWwONp6jluBbxexshwC+D7XAO4BXCcBslwc+BxmnyGmwOv
-ZJSW3K0DNwV+oEyAIx0mu9kGbgY8i7/P3x/ATYCf5hnATYCjHOh8qw3cM/DEp9dvD+CegF9mGcA9
-fQwO1TmNQYRJ/MVHt/XYTy8lml7o04XgUulcZoNLdHJ5L26NrW2VbLpo2rAPl4KhoDOMDIagyfC1
-GPq2wmYaVKMpIN8vBkN9Z5oYTDGT6WkxtW2lxSJpRlPCvV0OpvJOGTAoISblx6J02ZI9pSiKJkF1
-dASlWqfMG5SIk/JyUZpuyVqI3mgSzNeuoBTvlPGDJYAKhAncH+CN3g7cKzBwr8B/VPB8/GM99MXe
-zzd6v/5/Viby0/CT9FvwG/Tb58rxqvOK9Wr3TvEu8w717mZkcFRxRHI0cyR0FHUEdvRm5HfWcMZx
-tnKmc5Z0hnV2Zma3KrCisBqxkrEKsoKy+qJys+qzYrTatFK1yrVCtrqmMreqd0XgasKViKsYV0Cu
-nlh5uWpzxedq0ZWmq1RXuK6OWVm7KndFbzfAToJdCDsYdj/onNh1sWNjt8dOkV0mO1R2t+iM2VWz
-I2c3z06gXUQ7kIvJayvx2TW142q31k6vXWI7zIviZEvY2BW3o2433k6+TwF8grAoPreEq089fGLi
-0xaf1PiUxydEF/Re2hvtG6k8p7n4F+LQAAAAAElFTkSuQmCC""")
+iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAMAAAAM7l6QAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFn
+ZVJlYWR5ccllPAAAAMBQTFRFBHwvBSl8d04DCQ99egJLfAMzejQGcGoAAGZ6AHN3N3wBSHwBKXwDAHlp
+NQF9AHtXAFV7VwB7HgN9B30aG30FXncAAXtERwB8fQMbZQB5AUF8fRsHQ04rfQgLFlZTVzgteABiZ14F
+agNiAmpoF3kaLVU4V1QVYhdFLkZIQy1MFWc/biYkKSVpLWUmLjVYcQBzJHMbeRQiBWxZBlxnOmkXDn0M
+WAdnGhd5FkBlSRZfCk1rO3MMTmwJCm5FQgtwMhJydzVfDgAAAYtJREFUeNpUzeligjAQBOCNgFcVFVRQ
+FC3gUU/Uingg7/9W3U1CpJOf38wGGpQ2ptPpDIcAYNv29Xrt9/utVqsJXBsfLmmzKbiYy3WZ6/XC1fyj
+X8iiIOZQsFDBvFBct+1I6BcGuvUuedgIwzOfR9dI6QC6FF4I2+dsmEEURVIHA+RxVzZwfs4gi+JW3Hwi
+ch5juF8ul/CcbTZxHD+ffFqwrGDB32z2+9/n6/VCqw1qwMZMFh6Ph+/7C2RUJAowGWqlqb9eLCa/y2/M
+f2YsZWl6WK8nk+VSOTBN05iGemO73e5w+JnNZpVlRQYIKTcM+g/xtiq1BloR5Dy/3++r7ba6rWLkmmLd
+LCvP8zfqCp0zNYgtepZlmu93kiCfTifP87iDNK5OkiSBbpyEe1WPs0DTdJxeEAQr3TCUgyXUQnR6ySgI
+dJy7rjclV8y3PdS5jm647nRKDVBIOjoSG4KpAOpfB3V0nM/LjmyapXHBriscylrwx0FpiQ11Hf6PyXX5
+ORWAoxqr44Y4/ifAAPd/TAMIg8r1AAAAAElFTkSuQmCC""")
