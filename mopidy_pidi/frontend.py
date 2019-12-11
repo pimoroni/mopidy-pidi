@@ -8,7 +8,6 @@ import time
 import netifaces
 import pykka
 from mopidy import core
-from pidi_display_st7789 import DisplayST7789
 
 from . import Extension
 from .brainz import Brainz
