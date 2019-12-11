@@ -1,18 +1,18 @@
 from __future__ import unicode_literals
 
-import threading
-import time
 import logging
 import os
+import threading
+import time
 
-from mopidy import core
-from . import Extension
-from .brainz import Brainz
+import requests
 
 import pykka
+from io import BytesIO
+from mopidy import core
 
-from pidi_display_st7789 import DisplayST7789
-
+from . import Extension
+from .brainz import Brainz
 
 logger = logging.getLogger(__name__)
 
@@ -88,10 +88,10 @@ class PiDiFrontend(pykka.ThreadingActor, core.CoreListener):
         self.display.update(state='play')
 
     def update_elapsed(self, time_position):
-         self.display.update(
+        self.display.update(
             elapsed=float(time_position),
         )
-    
+
     def update_track(self, track, time_position=None):
         if track is None:
             track = self.core.playback.get_current_track().get()
@@ -120,6 +120,19 @@ class PiDiFrontend(pykka.ThreadingActor, core.CoreListener):
                 elapsed=float(time_position),
                 length=float(track.length)
             )
+
+        art = None
+        track_images = self.core.library.get_images([track.uri]).get()
+        if track.uri in track_images:
+            track_images = track_images[track.uri]
+            if len(track_images) == 1:
+                art = track_images[0].uri
+            else:
+                for image in track_images:
+                    if image.height >= 240 and image.width >= 240:
+                        art = image.uri
+
+        self.display.update_album_art(art=art)
 
     def tracklist_changed(self):
         pass
@@ -176,9 +189,35 @@ class PiDi():
 
     def _handle_album_art(self, art):
         if art != self._last_art:
-            print("Updating art to {}".format(art))
             self._display.update_album_art(art)
             self._last_art = art
+
+    def update_album_art(self, art=None):
+        _album = self.title if self.album is None or self.album == '' else self.album
+
+        if art is not None:
+            if os.path.isfile(art):
+                # Art is already a locally cached file we can use
+                self._handle_album_art(art)
+                return
+
+            elif art.startswith("http://") or art.startswith("https://"):
+                file_name = self._brainz.get_cache_file_name(art)
+
+                if os.path.isfile(file_name):
+                    # If a cached file already exists, use it!
+                    self._handle_album_art(file_name)
+                    return
+
+                else:
+                    # Otherwise, request the URL and save it!
+                    response = requests.get(art)
+                    if response.status_code == 200:
+                        self._brainz.save_album_art(response.content, file_name)
+                        self._handle_album_art(file_name)
+                        return
+
+        art = self._brainz.get_album_art(self.artist, _album, self._handle_album_art)
 
     def update(self, **kwargs):
         self.shuffle = kwargs.get('shuffle', self.shuffle)
@@ -191,10 +230,6 @@ class PiDi():
         self.title = kwargs.get('title', self.title)
         self.album = kwargs.get('album', self.album)
         self.artist = kwargs.get('artist', self.artist)
-
-        if 'album' in kwargs or 'artist' in kwargs or 'title' in kwargs:
-            _album = self.title if self.album is None or self.album == '' else self.album
-            art = self._brainz.get_album_art(self.artist, _album, self._handle_album_art)
 
         if 'elapsed' in kwargs:
             if 'length' in kwargs:
@@ -221,4 +256,3 @@ class PiDi():
 
             self._display.redraw()
             time.sleep(self._delay)
-
