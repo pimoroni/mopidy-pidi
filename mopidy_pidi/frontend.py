@@ -5,10 +5,8 @@ import os
 import threading
 import time
 
-import requests
-
+import netifaces
 import pykka
-from io import BytesIO
 from mopidy import core
 
 from . import Extension
@@ -42,10 +40,35 @@ class PiDiFrontend(pykka.ThreadingActor, core.CoreListener):
         self.display.update(
             volume=self.core.mixer.get_volume().get()
         )
+        if 'http' in self.config:
+            ifaces = netifaces.interfaces()
+            ifaces.remove(u'lo')
+
+            http = self.config['http']
+            if http.get('enabled', False):
+                hostname = http.get('hostname', '127.0.0.1')
+                port = http.get('port', 6680)
+                if hostname in ["::", "0.0.0.0"]:
+                    family = netifaces.AF_INET6 if hostname == "::" else netifaces.AF_INET
+                    for iface in ifaces:
+                        hostname = self.get_ifaddress(iface, family)
+                        if hostname is not None:
+                            break
+                if hostname is not None:
+                    self.display.update(
+                        title="Visit http://{hostname}:{port} to select content.".format(hostname=hostname, port=port)
+                    )
+                    self.display.update_album_art(art='')
 
     def on_stop(self):
         self.display.stop()
         self.display = None
+
+    def get_ifaddress(self, iface, family):
+        try:
+            return netifaces.ifaddresses(iface)[family][0]['addr']
+        except (IndexError, KeyError):
+            return None
 
     def mute_changed(self, mute):
         pass
