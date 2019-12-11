@@ -5,6 +5,8 @@ import os
 import threading
 import time
 
+import requests
+
 import netifaces
 import pykka
 from mopidy import core
