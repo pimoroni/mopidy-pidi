@@ -2,6 +2,14 @@
 Changelog
 *********
 
+v0.2.0
+========================================
+
+- Use Mopidy supplied album art where available, only use Brainz as a fallback
+- Attempt to discover and display public IP address on start
+- BugFix: display current volume on start
+
+
 v0.1.0
 ========================================
 
