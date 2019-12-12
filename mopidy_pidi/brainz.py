@@ -106,6 +106,7 @@ class Brainz:
             return None
 
     def get_cache_file_name(self, file_name):
+        file_name = file_name.encode("utf-8")
         file_name = "{}.jpg".format(base64.b64encode(file_name))
 
         return os.path.join(self._cache_dir, file_name)
