@@ -1,6 +1,5 @@
-from __future__ import unicode_literals
-
-from mopidy_pidi import Extension, frontend as frontend_lib
+from mopidy_pidi import Extension
+from mopidy_pidi import frontend as frontend_lib
 
 
 def test_get_default_config():
@@ -17,9 +16,4 @@ def test_get_config_schema():
 
     schema = ext.get_config_schema()
 
-    # TODO Test the content of your config schema
-    #assert "username" in schema
-    #assert "password" in schema
-
-
-# TODO Write more tests
+    assert "display" in schema

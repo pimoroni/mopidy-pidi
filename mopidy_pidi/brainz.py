@@ -1,6 +1,7 @@
 """
 Musicbrainz related functions.
 """
+import logging
 import base64
 import os
 import time
@@ -11,28 +12,30 @@ import musicbrainzngs as mus
 from .__init__ import __version__
 
 
+logger = logging.getLogger(__name__)
+
+
 class Brainz:
     def __init__(self, cache_dir):
         """Initialize musicbrainz."""
-        mus.set_useragent("python-pidi: A cover art daemon.",
-                          __version__,
-                          "https://github.com/pimoroni/mopidy-pidi")
+        mus.set_useragent(
+            "python-pidi: A cover art daemon.",
+            __version__,
+            "https://github.com/pimoroni/mopidy-pidi",
+        )
 
         self._cache_dir = cache_dir
         self._default_filename = os.path.join(self._cache_dir, "__default.jpg")
 
         self.save_album_art(self.get_default_album_art(), self._default_filename)
 
-    def get_album_art(self,  artist, album, callback=None):
+    def get_album_art(self, artist, album, callback=None):
         if artist is None or album is None or artist == "" or album == "":
             if callback is not None:
                 return callback(self._default_filename)
             return self._default_filename
 
-        file_name = self.get_cache_file_name("{artist}_{album}".format(
-            artist=artist,
-            album=album
-        ))
+        file_name = self.get_cache_file_name(f"{artist}_{album}")
 
         if os.path.isfile(file_name):
             # If a cached file already exists, use it!
@@ -41,6 +44,7 @@ class Brainz:
             return file_name
 
         if callback is not None:
+
             def async_request_album_art(self, artist, album, file_name, callback):
                 album_art = self.request_album_art(artist, album)
 
@@ -56,12 +60,8 @@ class Brainz:
 
             t_album_art = Thread(
                 target=async_request_album_art,
-                args=(
-                    self,
-                    artist,
-                    album,
-                    file_name,
-                    callback))
+                args=(self, artist, album, file_name, callback),
+            )
             t_album_art.start()
             return t_album_art
 
@@ -85,11 +85,9 @@ class Brainz:
     def request_album_art(self, artist, album, size=500, retry_delay=5, retries=5):
         """Download the cover art."""
         try:
-            data = mus.search_releases(artist=artist,
-                                       release=album,
-                                       limit=1)
+            data = mus.search_releases(artist=artist, release=album, limit=1)
             release_id = data["release-list"][0]["release-group"]["id"]
-            print("mopidy-pidi: musicbrainz using release-id: {}".format(data['release-list'][0]['id']))
+            logger.info("mopidy-pidi: musicbrainz using release-id: {release_id}")
 
             return mus.get_release_group_image_front(release_id, size=size)
 
@@ -97,23 +95,28 @@ class Brainz:
             if retries == 0:
                 # raise mus.NetworkError("Failure connecting to MusicBrainz.org")
                 return None
-            print("mopidy-pidi: musicbrainz retrying download. {retries} retries left!".format(retries=retries))
+            logger.info(
+                f"mopidy-pidi: musicbrainz retrying download. {retries} retries left!"
+            )
             time.sleep(retry_delay)
-            self.request_album_art(song, artist, album, size=size, retries=retries - 1)
+            self.request_album_art(artist, album, size=size, retries=retries - 1)
 
         except mus.ResponseError:
-            print("mopidy-pidi: musicbrainz couldn't find album art for {artist} - {album}".format(artist=artist, album=album))
+            logger.info(
+                f"mopidy-pidi: musicbrainz couldn't find album art for {artist} - {album}"
+            )
             return None
 
     def get_cache_file_name(self, file_name):
         file_name = file_name.encode("utf-8")
-        file_name = "{}.jpg".format(base64.b64encode(file_name))
+        file_name = f"{base64.b64encode(file_name)}.jpg"
 
         return os.path.join(self._cache_dir, file_name)
 
     def get_default_album_art(self):
         """Return binary version of default album art."""
-        return base64.b64decode("""
+        return base64.b64decode(
+            """
 iVBORw0KGgoAAAANSUhEUgAAAB4AAAAeCAMAAAAM7l6QAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFn
 ZVJlYWR5ccllPAAAAMBQTFRFBHwvBSl8d04DCQ99egJLfAMzejQGcGoAAGZ6AHN3N3wBSHwBKXwDAHlp
 NQF9AHtXAFV7VwB7HgN9B30aG30FXncAAXtERwB8fQMbZQB5AUF8fRsHQ04rfQgLFlZTVzgteABiZ14F
@@ -125,4 +128,5 @@ ch5juF8ul/CcbTZxHD+ffFqwrGDB32z2+9/n6/VCqw1qwMZMFh6Ph+/7C2RUJAowGWqlqb9eLCa/y2/M
 f2YsZWl6WK8nk+VSOTBN05iGemO73e5w+JnNZpVlRQYIKTcM+g/xtiq1BloR5Dy/3++r7ba6rWLkmmLd
 LCvP8zfqCp0zNYgtepZlmu93kiCfTifP87iDNK5OkiSBbpyEe1WPs0DTdJxeEAQr3TCUgyXUQnR6ySgI
 dJy7rjclV8y3PdS5jm647nRKDVBIOjoSG4KpAOpfB3V0nM/LjmyapXHBriscylrwx0FpiQ11Hf6PyXX5
-ORWAoxqr44Y4/ifAAPd/TAMIg8r1AAAAAElFTkSuQmCC""")
+ORWAoxqr44Y4/ifAAPd/TAMIg8r1AAAAAElFTkSuQmCC"""
+        )
