@@ -2,16 +2,16 @@
 Mopidy-PiDi
 ****************************
 
-.. image:: https://img.shields.io/pypi/v/Mopidy-PiDi.svg?style=flat
+.. image:: https://img.shields.io/pypi/v/Mopidy-PiDi.svg
     :target: https://pypi.org/project/Mopidy-PiDi/
     :alt: Latest PyPI version
 
-.. image:: https://img.shields.io/travis/pimoroni/mopidy-pidi/master.svg?style=flat
-    :target: https://travis-ci.org/pimoroni/mopidy-pidi
+.. image:: https://img.shields.io/circleci/build/gh/pimoroni/mopidy-pidi/master.svg
+    :target: https://circleci.com/gh/pimoroni/mopidy-pidi
     :alt: Travis CI build status
 
-.. image:: https://img.shields.io/coveralls/pimoroni/mopidy-pidi/master.svg?style=flat
-   :target: https://coveralls.io/r/pimoroni/mopidy-pidi
+.. image:: https://img.shields.io/codecov/gh/pimoroni/mopidy-pidi/master.svg
+   :target: https://codecov.io/gh/pimoroni/mopidy-pidi
    :alt: Test coverage
 
 Mopidy extension for displaying song info and album art using pidi display plugins.
