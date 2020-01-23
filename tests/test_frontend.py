@@ -25,9 +25,11 @@ def frontend():
     dummy_core = core.Core.start(audio=audio, mixer=mixer, backends=[backend]).proxy()
 
     distribution = pkg_resources.Distribution(__file__)
-    endpoint = pkg_resources.EntryPoint.parse('dummy = mopidy_pidi.plugin:DisplayDummy', dist=distribution)
-    distribution._ep_map = {'pidi.plugin.display': {'dummy': endpoint}}
-    pkg_resources.working_set.add(distribution, 'dummy')
+    endpoint = pkg_resources.EntryPoint.parse(
+        "dummy = mopidy_pidi.plugin:DisplayDummy", dist=distribution
+    )
+    distribution._ep_map = {"pidi.plugin.display": {"dummy": endpoint}}
+    pkg_resources.working_set.add(distribution, "dummy")
 
     config = {"pidi": {"display": "dummy"}, "core": {"data_dir": "/tmp"}}
 

@@ -45,7 +45,7 @@ class Display:
 class DisplayDummy(Display):
     """Dummy display for use in texting."""
 
-    option_name = 'dummy'
+    option_name = "dummy"
 
     def update_album_art(self, input_file):
         pass

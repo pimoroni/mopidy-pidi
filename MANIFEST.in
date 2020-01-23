@@ -7,3 +7,5 @@ include mopidy_pidi/ext.conf
 include tox.ini
 
 recursive-include tests *.py
+
+recursive-include .circleci *

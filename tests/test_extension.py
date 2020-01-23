@@ -27,6 +27,4 @@ def test_setup():
 
     ext.setup(registry)
 
-    registry.add.assert_called_once_with(
-        "frontend", frontend_lib.PiDiFrontend
-    )
+    registry.add.assert_called_once_with("frontend", frontend_lib.PiDiFrontend)
