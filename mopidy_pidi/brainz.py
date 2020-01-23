@@ -1,8 +1,8 @@
 """
 Musicbrainz related functions.
 """
-import logging
 import base64
+import logging
 import os
 import time
 from threading import Thread
@@ -10,7 +10,6 @@ from threading import Thread
 import musicbrainzngs as mus
 
 from .__init__ import __version__
-
 
 logger = logging.getLogger(__name__)
 

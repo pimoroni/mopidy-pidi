@@ -40,3 +40,15 @@ class Display:
 
     def add_args(argparse):
         """Expand argparse instance with display-specific args."""
+
+
+class DisplayDummy(Display):
+    """Dummy display for use in texting."""
+
+    option_name = 'dummy'
+
+    def update_album_art(self, input_file):
+        pass
+
+    def redraw(self):
+        pass
