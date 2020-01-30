@@ -1,15 +1,13 @@
-from __future__ import unicode_literals
-
 import logging
 import os
 import threading
 import time
 
+import pykka
 import requests
+from mopidy import core
 
 import netifaces
-import pykka
-from mopidy import core
 
 from . import Extension
 from .brainz import Brainz
@@ -17,7 +15,7 @@ from .brainz import Brainz
 logger = logging.getLogger(__name__)
 
 
-class PiDiConfig():
+class PiDiConfig:
     def __init__(self, config=None):
         self.rotation = 90
         self.spi_port = 0
@@ -31,7 +29,7 @@ class PiDiConfig():
 
 class PiDiFrontend(pykka.ThreadingActor, core.CoreListener):
     def __init__(self, config, core):
-        super(PiDiFrontend, self).__init__()
+        super().__init__()
         self.core = core
         self.config = config
         self.current_track = None
@@ -39,28 +37,28 @@ class PiDiFrontend(pykka.ThreadingActor, core.CoreListener):
     def on_start(self):
         self.display = PiDi(self.config)
         self.display.start()
-        self.display.update(
-            volume=self.core.mixer.get_volume().get()
-        )
-        if 'http' in self.config:
+        self.display.update(volume=self.core.mixer.get_volume().get())
+        if "http" in self.config:
             ifaces = netifaces.interfaces()
-            ifaces.remove(u'lo')
+            ifaces.remove("lo")
 
-            http = self.config['http']
-            if http.get('enabled', False):
-                hostname = http.get('hostname', '127.0.0.1')
-                port = http.get('port', 6680)
+            http = self.config["http"]
+            if http.get("enabled", False):
+                hostname = http.get("hostname", "127.0.0.1")
+                port = http.get("port", 6680)
                 if hostname in ["::", "0.0.0.0"]:
-                    family = netifaces.AF_INET6 if hostname == "::" else netifaces.AF_INET
+                    family = (
+                        netifaces.AF_INET6 if hostname == "::" else netifaces.AF_INET
+                    )
                     for iface in ifaces:
                         hostname = self.get_ifaddress(iface, family)
                         if hostname is not None:
                             break
                 if hostname is not None:
                     self.display.update(
-                        title="Visit http://{hostname}:{port} to select content.".format(hostname=hostname, port=port)
+                        title=f"Visit http://{hostname}:{port} to select content."
                     )
-                    self.display.update_album_art(art='')
+                    self.display.update_album_art(art="")
 
     def on_stop(self):
         self.display.stop()
@@ -68,7 +66,7 @@ class PiDiFrontend(pykka.ThreadingActor, core.CoreListener):
 
     def get_ifaddress(self, iface, family):
         try:
-            return netifaces.ifaddresses(iface)[family][0]['addr']
+            return netifaces.ifaddresses(iface)[family][0]["addr"]
         except (IndexError, KeyError):
             return None
 
@@ -78,7 +76,7 @@ class PiDiFrontend(pykka.ThreadingActor, core.CoreListener):
     def options_changed(self):
         self.display.update(
             shuffle=self.core.tracklist.get_random(),
-            repeat=self.core.tracklist.get_repeat()
+            repeat=self.core.tracklist.get_repeat(),
         )
 
     def playlist_changed(self, playlist):
@@ -98,32 +96,30 @@ class PiDiFrontend(pykka.ThreadingActor, core.CoreListener):
 
     def track_playback_ended(self, tl_track, time_position):
         self.update_elapsed(time_position)
-        self.display.update(state='pause')
+        self.display.update(state="pause")
 
     def track_playback_paused(self, tl_track, time_position):
         self.update_elapsed(time_position)
-        self.display.update(state='pause')
+        self.display.update(state="pause")
 
     def track_playback_resumed(self, tl_track, time_position):
         self.update_elapsed(time_position)
-        self.display.update(state='play')
+        self.display.update(state="play")
 
     def track_playback_started(self, tl_track):
         self.update_track(tl_track.track, 0)
-        self.display.update(state='play')
+        self.display.update(state="play")
 
     def update_elapsed(self, time_position):
-        self.display.update(
-            elapsed=float(time_position),
-        )
+        self.display.update(elapsed=float(time_position))
 
     def update_track(self, track, time_position=None):
         if track is None:
             track = self.core.playback.get_current_track().get()
 
-        title = ''
-        album = ''
-        artist = ''
+        title = ""
+        album = ""
+        artist = ""
 
         if track.name is not None:
             title = track.name
@@ -134,16 +130,11 @@ class PiDiFrontend(pykka.ThreadingActor, core.CoreListener):
         if track.artists is not None:
             artist = ", ".join([artist.name for artist in track.artists])
 
-        self.display.update(
-            title=title,
-            album=album,
-            artist=artist
-        )
+        self.display.update(title=title, album=album, artist=artist)
 
         if time_position is not None:
             self.display.update(
-                elapsed=float(time_position),
-                length=float(track.length)
+                elapsed=float(time_position), length=float(track.length)
             )
 
         art = None
@@ -166,17 +157,17 @@ class PiDiFrontend(pykka.ThreadingActor, core.CoreListener):
         if volume is None:
             return
 
-        self.display.update(
-            volume=volume
-        )
+        self.display.update(volume=volume)
 
 
-class PiDi():
+class PiDi:
     def __init__(self, config):
         self.config = config
         self.cache_dir = Extension.get_data_dir(config)
         self.display_config = PiDiConfig(config["pidi"])
-        self.display_class = Extension.get_display_types()[self.config["pidi"]["display"]]
+        self.display_class = Extension.get_display_types()[
+            self.config["pidi"]["display"]
+        ]
 
         self._brainz = Brainz(cache_dir=self.cache_dir)
         self._display = self.display_class(self.display_config)
@@ -218,7 +209,7 @@ class PiDi():
             self._last_art = art
 
     def update_album_art(self, art=None):
-        _album = self.title if self.album is None or self.album == '' else self.album
+        _album = self.title if self.album is None or self.album == "" else self.album
 
         if art is not None:
             if os.path.isfile(art):
@@ -245,26 +236,26 @@ class PiDi():
         art = self._brainz.get_album_art(self.artist, _album, self._handle_album_art)
 
     def update(self, **kwargs):
-        self.shuffle = kwargs.get('shuffle', self.shuffle)
-        self.repeat = kwargs.get('repeat', self.repeat)
-        self.state = kwargs.get('state', self.state)
-        self.volume = kwargs.get('volume', self.volume)
+        self.shuffle = kwargs.get("shuffle", self.shuffle)
+        self.repeat = kwargs.get("repeat", self.repeat)
+        self.state = kwargs.get("state", self.state)
+        self.volume = kwargs.get("volume", self.volume)
         # self.progress = kwargs.get('progress', self.progress)
-        self.elapsed = kwargs.get('elapsed', self.elapsed)
-        self.length = kwargs.get('length', self.length)
-        self.title = kwargs.get('title', self.title)
-        self.album = kwargs.get('album', self.album)
-        self.artist = kwargs.get('artist', self.artist)
+        self.elapsed = kwargs.get("elapsed", self.elapsed)
+        self.length = kwargs.get("length", self.length)
+        self.title = kwargs.get("title", self.title)
+        self.album = kwargs.get("album", self.album)
+        self.artist = kwargs.get("artist", self.artist)
 
-        if 'elapsed' in kwargs:
-            if 'length' in kwargs:
+        if "elapsed" in kwargs:
+            if "length" in kwargs:
                 self.progress = float(self.elapsed) / float(self.length)
             self._last_elapsed_update = time.time()
-            self._last_elapsed_value = kwargs['elapsed']
+            self._last_elapsed_value = kwargs["elapsed"]
 
     def _loop(self):
         while self._running.is_set():
-            if self.state == 'play':
+            if self.state == "play":
                 t_elapsed_ms = (time.time() - self._last_elapsed_update) * 1000
                 self.elapsed = float(self._last_elapsed_value + t_elapsed_ms)
                 self.progress = self.elapsed / self.length
@@ -277,7 +268,8 @@ class PiDi():
                 self.elapsed,
                 self.title,
                 self.album,
-                self.artist)
+                self.artist,
+            )
 
             self._display.redraw()
             time.sleep(self._delay)

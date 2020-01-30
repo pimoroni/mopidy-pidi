@@ -1,6 +1,7 @@
-from __future__ import unicode_literals
+from unittest import mock
 
-from mopidy_pidi import Extension, frontend as frontend_lib
+from mopidy_pidi import Extension
+from mopidy_pidi import frontend as frontend_lib
 
 
 def test_get_default_config():
@@ -17,9 +18,13 @@ def test_get_config_schema():
 
     schema = ext.get_config_schema()
 
-    # TODO Test the content of your config schema
-    #assert "username" in schema
-    #assert "password" in schema
+    assert "display" in schema
 
 
-# TODO Write more tests
+def test_setup():
+    ext = Extension()
+    registry = mock.Mock()
+
+    ext.setup(registry)
+
+    registry.add.assert_called_once_with("frontend", frontend_lib.PiDiFrontend)
