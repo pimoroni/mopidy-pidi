@@ -22,14 +22,14 @@ Installation
 
 Install by running::
 
-    pip install Mopidy-PiDi
+    pip3 install Mopidy-PiDi
 
 Or, if available, install the Debian/Ubuntu package from `apt.mopidy.com
 <https://apt.mopidy.com/>`_.
 
 You must then install a display plugin, for example::
 
-    pip install pidi-display-st7789
+    pip3 install pidi-display-st7789
 
 
 Configuration
