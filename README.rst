@@ -16,6 +16,16 @@ Mopidy-PiDi
 
 Mopidy extension for displaying song info and album art using pidi display plugins.
 
+Mopidy PiDi In Action
+=====================
+
+Using our `pidi-display-st7789 <https://github.com/pimoroni/pidi-plugins/tree/master/pidi-display-st7789>`_ plugin Mopidy PiDi will run the display on our `Pirate Audio boards <https://shop.pimoroni.com/collections/pirate-audio>`_, giving you album art and transport info.
+
+.. image:: https://cdn.shopify.com/s/files/1/0174/1800/products/pirate-audio-1_1024x1024.jpg?v=1574158580
+   :target: https://shop.pimoroni.com/collections/pirate-audio
+   :alt: Pirate Audio Display Boards
+   
+Combine this with `Mopidy Raspberry GPIO <https://github.com/pimoroni/mopidy-raspberry-gpio>`_ to handle button inputs and you've got a mini music player.
 
 Installation
 ============
@@ -30,6 +40,8 @@ Or, if available, install the Debian/Ubuntu package from `apt.mopidy.com
 You must then install a display plugin, for example::
 
     pip3 install pidi-display-st7789
+
+Find more plugins here: https://github.com/pimoroni/pidi-plugins
 
 
 Configuration
