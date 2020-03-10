@@ -133,8 +133,14 @@ class PiDiFrontend(pykka.ThreadingActor, core.CoreListener):
         self.display.update(title=title, album=album, artist=artist)
 
         if time_position is not None:
+            length = track.length
+            # Default to 60s long and loop the transport bar
+            if length is None:
+                length = 60
+                time_position %= length
+
             self.display.update(
-                elapsed=float(time_position), length=float(track.length)
+                elapsed=float(time_position), length=float(length)
             )
 
         art = None
