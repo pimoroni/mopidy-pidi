@@ -139,9 +139,7 @@ class PiDiFrontend(pykka.ThreadingActor, core.CoreListener):
                 length = 60
                 time_position %= length
 
-            self.display.update(
-                elapsed=float(time_position), length=float(length)
-            )
+            self.display.update(elapsed=float(time_position), length=float(length))
 
         art = None
         track_images = self.core.library.get_images([track.uri]).get()
