@@ -108,7 +108,13 @@ class Brainz:
 
     def get_cache_file_name(self, file_name):
         file_name = file_name.encode("utf-8")
-        file_name = f"{base64.b64encode(file_name)}.jpg"
+        file_name = base64.b64encode(file_name)
+        if type(file_name) is bytes:
+            file_name = file_name.decode('utf-8')
+        # Ruh roh, / is a vaild Base64 character
+        # but also a valid UNIX path separator!
+        file_name = file_name.replace('/', '-')
+        file_name = f"{file_name}.jpg"
 
         return os.path.join(self._cache_dir, file_name)
 
