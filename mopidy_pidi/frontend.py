@@ -145,6 +145,8 @@ class PiDiFrontend(pykka.ThreadingActor, core.CoreListener):
                 art = track_images[0].uri
             else:
                 for image in track_images:
+                    if image.width is None or image.height is None:
+                        continue
                     if image.height >= 240 and image.width >= 240:
                         art = image.uri
 
