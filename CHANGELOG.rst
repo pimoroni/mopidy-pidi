@@ -2,6 +2,13 @@
 Changelog
 *********
 
+v1.0.1
+========================================
+
+- BugFix: support for mopidy-youtube, handle None Image.width/Image.height
+- BugFix: support for mopidy-tunein, handle None Track.length
+- BugFix: cache filename bug caused by Base64 outputting /
+
 v1.0.0
 ========================================
 
