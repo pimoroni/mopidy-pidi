@@ -2,6 +2,11 @@
 Changelog
 *********
 
+v1.0.2
+========================================
+
+- Add support for stopping display plugins on exit.
+
 v1.0.1
 ========================================
 
