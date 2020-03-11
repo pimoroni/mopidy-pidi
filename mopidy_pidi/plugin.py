@@ -16,6 +16,9 @@ class Display:
         self._album = ""
         self._artist = ""
 
+    def stop(self):
+        pass
+
     def update_album_art(self, input_file):
         """Update the display album art."""
         raise NotImplementedError

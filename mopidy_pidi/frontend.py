@@ -208,6 +208,7 @@ class PiDi:
         self._running.clear()
         self._thread.join()
         self._thread = None
+        self._display.stop()
 
     def _handle_album_art(self, art):
         if art != self._last_art:
