@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class PiDiConfig:
     def __init__(self, config=None):
-        self.rotation = 90
+        self.rotation = config.get('rotation', 90)
         self.spi_port = 0
         self.spi_chip_select_pin = 1
         self.spi_data_command_pin = 9

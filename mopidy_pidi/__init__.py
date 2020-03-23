@@ -36,6 +36,7 @@ class Extension(ext.Extension):
     def get_config_schema(self):
         schema = super().get_config_schema()
         schema["display"] = config.String(choices=self.get_display_types().keys())
+        schema["rotation"] = config.Integer(choices=[0, 90, 180, 270])
         return schema
 
     def setup(self, registry):
