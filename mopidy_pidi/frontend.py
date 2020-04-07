@@ -92,7 +92,7 @@ class PiDiFrontend(pykka.ThreadingActor, core.CoreListener):
         self.update_elapsed(time_position)
 
     def stream_title_changed(self, title):
-        pass
+        self.display.update(title=title)
 
     def track_playback_ended(self, tl_track, time_position):
         self.update_elapsed(time_position)
