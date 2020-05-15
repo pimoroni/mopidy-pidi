@@ -2,6 +2,12 @@
 Changelog
 *********
 
+v1.0.3
+========================================
+
+- Add support for display rotation
+- Implement "stream_title_changed" to update display upon radio track change
+
 v1.0.2
 ========================================
 
