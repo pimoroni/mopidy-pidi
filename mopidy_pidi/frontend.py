@@ -174,6 +174,7 @@ class PiDi:
         self.display_class = Extension.get_display_types()[
             self.config["pidi"]["display"]
         ]
+        self.idle_timeout = config["pidi"]["idle_timeout"]
 
         self._brainz = Brainz(cache_dir=self.cache_dir)
         self._display = self.display_class(self.display_config)
@@ -193,6 +194,7 @@ class PiDi:
         self.artist = ""
         self._last_progress_update = time.time()
         self._last_progress_value = 0
+        self._last_state_change = 0
         self._last_art = ""
 
     def start(self):
@@ -243,6 +245,9 @@ class PiDi:
         art = self._brainz.get_album_art(self.artist, _album, self._handle_album_art)
 
     def update(self, **kwargs):
+        if "state" in kwargs or "volume" in kwargs:
+            self._last_state_change = time.time()
+            self._display.start()
         self.shuffle = kwargs.get("shuffle", self.shuffle)
         self.repeat = kwargs.get("repeat", self.repeat)
         self.state = kwargs.get("state", self.state)
@@ -262,7 +267,10 @@ class PiDi:
 
     def _loop(self):
         while self._running.is_set():
-            if self.state == "play":
+            t_idle_sec = time.time() - self._last_state_change
+            if self.idle_timeout > 0 and t_idle_sec >= self.idle_timeout:
+                self._display.stop()
+            elif self.state == "play":
                 t_elapsed_ms = (time.time() - self._last_elapsed_update) * 1000
                 self.elapsed = float(self._last_elapsed_value + t_elapsed_ms)
                 self.progress = self.elapsed / self.length
