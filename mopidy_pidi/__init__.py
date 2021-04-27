@@ -37,6 +37,7 @@ class Extension(ext.Extension):
         schema = super().get_config_schema()
         schema["display"] = config.String(choices=self.get_display_types().keys())
         schema["rotation"] = config.Integer(choices=[0, 90, 180, 270])
+        schema["idle_timeout"] = config.Integer(minimum=0)
         return schema
 
     def setup(self, registry):
