@@ -174,7 +174,7 @@ class PiDi:
         self.display_class = Extension.get_display_types()[
             self.config["pidi"]["display"]
         ]
-        self.idle_timeout = config["pidi"]["idle_timeout"]
+        self.idle_timeout = config["pidi"].get("idle_timeout", 0)
 
         self._brainz = Brainz(cache_dir=self.cache_dir)
         self._display = self.display_class(self.display_config)
