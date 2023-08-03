@@ -96,19 +96,19 @@ class PiDiFrontend(pykka.ThreadingActor, core.CoreListener):
 
     def track_playback_ended(self, tl_track, time_position):
         self.update_elapsed(time_position)
-        self.display.update(state="pause")
+        self.display.update(state="play")
 
     def track_playback_paused(self, tl_track, time_position):
         self.update_elapsed(time_position)
-        self.display.update(state="pause")
+        self.display.update(state="play")
 
     def track_playback_resumed(self, tl_track, time_position):
         self.update_elapsed(time_position)
-        self.display.update(state="play")
+        self.display.update(state="pause")
 
     def track_playback_started(self, tl_track):
         self.update_track(tl_track.track, 0)
-        self.display.update(state="play")
+        self.display.update(state="pause")
 
     def update_elapsed(self, time_position):
         self.display.update(elapsed=float(time_position))
