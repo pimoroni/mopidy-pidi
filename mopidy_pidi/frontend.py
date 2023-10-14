@@ -11,6 +11,7 @@ import netifaces
 
 from . import Extension
 from .brainz import Brainz
+from .fileart import Fileart
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,16 @@ class PiDiFrontend(pykka.ThreadingActor, core.CoreListener):
         self.core = core
         self.config = config
         self.current_track = None
+        self.directory_path = config["local"]["media_dir"]  # Fetch media directory from Mopidy config
+        #self.file_art_instance = Fileart(cache_dir=Extension.get_data_dir(config), directory_path=self.directory_path)
+        self.cache_dir = Extension.get_data_dir(config)
+        # Provide both cache_dir and directory_path to Fileart class
+        self.file_art_instance = Fileart(cache_dir=self.cache_dir, directory_path=self.directory_path)
+
+
+        #self.file_art_instance = Fileart(cache_dir=Extension.get_data_dir(config))  # Create an instance of Fileart
+
+
 
     def on_start(self):
         self.display = PiDi(self.config)
@@ -142,19 +153,32 @@ class PiDiFrontend(pykka.ThreadingActor, core.CoreListener):
             self.display.update(elapsed=float(time_position), length=float(length))
 
         art = None
-        track_images = self.core.library.get_images([track.uri]).get()
-        if track.uri in track_images:
-            track_images = track_images[track.uri]
-            if len(track_images) == 1:
-                art = track_images[0].uri
-            else:
-                for image in track_images:
-                    if image.width is None or image.height is None:
-                        continue
-                    if image.height >= 240 and image.width >= 240:
-                        art = image.uri
+
+        mp3_file_path = self.file_art_instance.get_current_playing_file()
+
+        if mp3_file_path and os.path.isfile(mp3_file_path):
+            self.file_art_instance.extract_album_art(mp3_file_path)
+            art = "/var/lib/mopidy/pidi/album.jpg"
 
         self.display.update_album_art(art=art)
+
+    def tracklist_changed(self):
+        pass
+
+    def volume_changed(self, volume):
+        if volume is None:
+            return
+
+        self.display.update(volume=volume)
+
+def tracklist_changed(self):
+    pass
+
+def volume_changed(self, volume):
+    if volume is None:
+        return
+
+    self.display.update(volume=volume)
 
     def tracklist_changed(self):
         pass
@@ -168,6 +192,7 @@ class PiDiFrontend(pykka.ThreadingActor, core.CoreListener):
 
 class PiDi:
     def __init__(self, config):
+        
         self.config = config
         self.cache_dir = Extension.get_data_dir(config)
         self.display_config = PiDiConfig(config["pidi"])
@@ -175,7 +200,6 @@ class PiDi:
             self.config["pidi"]["display"]
         ]
         self.idle_timeout = config["pidi"].get("idle_timeout", 0)
-
         self._brainz = Brainz(cache_dir=self.cache_dir)
         self._display = self.display_class(self.display_config)
         self._running = threading.Event()
@@ -213,22 +237,22 @@ class PiDi:
         self._display.stop()
 
     def _handle_album_art(self, art):
+        print("art",art)
         if art != self._last_art:
             self._display.update_album_art(art)
             self._last_art = art
 
     def update_album_art(self, art=None):
         _album = self.title if self.album is None or self.album == "" else self.album
-
         if art is not None:
             if os.path.isfile(art):
                 # Art is already a locally cached file we can use
+                self._display.update_album_art(art)
                 self._handle_album_art(art)
                 return
 
             elif art.startswith("http://") or art.startswith("https://"):
                 file_name = self._brainz.get_cache_file_name(art)
-
                 if os.path.isfile(file_name):
                     # If a cached file already exists, use it!
                     self._handle_album_art(file_name)
@@ -241,8 +265,8 @@ class PiDi:
                         self._brainz.save_album_art(response.content, file_name)
                         self._handle_album_art(file_name)
                         return
-
-        art = self._brainz.get_album_art(self.artist, _album, self._handle_album_art)
+        # TODO: if local art not there, use brainz
+        #art = self._brainz.get_album_art(self.artist, _album, self._handle_album_art)
 
     def update(self, **kwargs):
         if "state" in kwargs or "volume" in kwargs:
